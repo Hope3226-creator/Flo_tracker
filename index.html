@@ -8,30 +8,23 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-body {
-  font-family: -apple-system, sans-serif;
-  background: #0f0e17;
-  color: #eee;
-  padding: 20px;
-}
+body { font-family: -apple-system; background:#0f0e17; color:white; padding:15px; }
 
-.card {
-  background: #1a1828;
-  padding: 15px;
-  border-radius: 15px;
-  margin-bottom: 15px;
-}
+.card { background:#1a1828; padding:15px; border-radius:15px; margin-bottom:15px; }
 
-.section-label {
-  font-size: 11px;
-  letter-spacing: 2px;
-  color: #7c6f8e;
-  margin-bottom: 10px;
+.section-label { font-size:11px; color:#7c6f8e; margin-bottom:10px; }
+
+input, textarea {
+  width:100%;
+  margin-bottom:8px;
+  padding:8px;
+  border-radius:8px;
+  border:none;
+  background:#221f33;
+  color:white;
 }
 
 .toggle-row {
-  display:flex;
-  justify-content:space-between;
   padding:10px;
   background:#221f33;
   margin-bottom:6px;
@@ -41,38 +34,25 @@ body {
 
 .toggle-row.on { background:#2c3d2f; }
 
-.scale-row { display:flex; gap:5px; }
+.scale-row { display:flex; gap:5px; margin-bottom:10px; }
 
 .scale-btn {
   flex:1;
   padding:6px;
+  border-radius:8px;
   background:#221f33;
   border:none;
   color:#aaa;
-  border-radius:8px;
 }
 
-.scale-btn.active {
-  background:#a78bfa;
-  color:black;
-}
-
-textarea {
-  width:100%;
-  height:80px;
-  background:#221f33;
-  border:none;
-  color:white;
-  padding:10px;
-  border-radius:10px;
-}
+.scale-btn.active { background:#a78bfa; color:black; }
 
 button {
   width:100%;
-  padding:12px;
-  margin-top:10px;
-  border:none;
+  padding:10px;
   border-radius:10px;
+  border:none;
+  margin-top:10px;
   background:#a78bfa;
 }
 
@@ -83,9 +63,12 @@ canvas { margin-top:15px; }
 <body>
 
 <div class="card">
+  <div class="section-label">Date</div>
+  <input id="datePicker" type="date" onchange="changeDate(this.value)">
+
   <div class="section-label">Morning Loop</div>
   <div class="toggle-row" onclick="toggleField('morningLoop')">
-    Morning loop stuck
+    Morning loop
   </div>
 
   <div class="section-label">Energy</div>
@@ -107,65 +90,87 @@ canvas { margin-top:15px; }
 </div>
 
 <script>
-// ─── STATE ─────────────────────────
-const KEY = "flo-v2";
+
+// ─── STATE ─────────────────────
+const KEY = "flo-v3";
 let DATA = JSON.parse(localStorage.getItem(KEY) || "{}");
 let activeDate = new Date().toISOString().split("T")[0];
+
+document.getElementById("datePicker").value = activeDate;
 
 function save() {
   localStorage.setItem(KEY, JSON.stringify(DATA));
 }
 
-// ─── INPUT ─────────────────────────
-function handleInput(field, val) {
+// ─── HELPERS ─────────────────────
+function getDay() {
   if (!DATA[activeDate]) DATA[activeDate] = {};
-  DATA[activeDate][field] = val;
+  return DATA[activeDate];
+}
+
+// ─── INPUTS ─────────────────────
+function handleInput(field, val) {
+  getDay()[field] = val;
   save();
   updateChart();
 }
 
 function toggleField(field) {
-  if (!DATA[activeDate]) DATA[activeDate] = {};
-  DATA[activeDate][field] = !DATA[activeDate][field];
+  const d = getDay();
+  d[field] = !d[field];
   render();
   save();
 }
 
 function setScale(field, val) {
-  if (!DATA[activeDate]) DATA[activeDate] = {};
-  DATA[activeDate][field] =
-    DATA[activeDate][field] === val ? null : val;
+  const d = getDay();
+  d[field] = d[field] === val ? null : val;
   render();
   save();
 }
 
-// ─── RENDER SCALES ─────────────────────────
-function renderScales() {
-  const energy = document.getElementById("energyRow");
-  const mood = document.getElementById("moodRow");
-
-  energy.innerHTML = "";
-  mood.innerHTML = "";
-
-  for (let i = 1; i <= 5; i++) {
-    energy.innerHTML += `<button class="scale-btn ${DATA[activeDate]?.energy===i?'active':''}" onclick="setScale('energy',${i})">${i}</button>`;
-    mood.innerHTML += `<button class="scale-btn ${DATA[activeDate]?.mood===i?'active':''}" onclick="setScale('mood',${i})">${i}</button>`;
-  }
+// ─── DATE CHANGE ─────────────────────
+function changeDate(val) {
+  activeDate = val;
+  render();
 }
 
-// ─── RENDER ─────────────────────────
+// ─── RENDER UI ─────────────────────
 function render() {
   renderScales();
   updateChart();
+  updateToggleUI();
 }
 
-// ─── SAVE DAY ─────────────────────────
+function renderScales() {
+  const e = document.getElementById("energyRow");
+  const m = document.getElementById("moodRow");
+
+  e.innerHTML = "";
+  m.innerHTML = "";
+
+  const d = getDay();
+
+  for (let i = 1; i <= 5; i++) {
+    e.innerHTML += `<button class="scale-btn ${d.energy===i?'active':''}" onclick="setScale('energy',${i})">${i}</button>`;
+    m.innerHTML += `<button class="scale-btn ${d.mood===i?'active':''}" onclick="setScale('mood',${i})">${i}</button>`;
+  }
+}
+
+function updateToggleUI() {
+  const el = document.querySelector(".toggle-row");
+  const d = getDay();
+  if (d.morningLoop) el.classList.add("on");
+  else el.classList.remove("on");
+}
+
+// ─── SAVE ─────────────────────
 function saveDay() {
   save();
   updateChart();
 }
 
-// ─── EXPORT ─────────────────────────
+// ─── EXPORT ─────────────────────
 function exportData() {
   const blob = new Blob([JSON.stringify(DATA,null,2)], {type:"application/json"});
   const a = document.createElement("a");
@@ -174,7 +179,7 @@ function exportData() {
   a.click();
 }
 
-// ─── CHART ─────────────────────────
+// ─── CHART ─────────────────────
 let chart;
 
 function updateChart() {
@@ -191,29 +196,17 @@ function updateChart() {
     data: {
       labels,
       datasets: [
-        {
-          label: "Energy",
-          data: energy,
-          borderColor: "#a78bfa",
-          tension: 0.3
-        },
-        {
-          label: "Mood",
-          data: mood,
-          borderColor: "#6ee7b7",
-          tension: 0.3
-        }
+        { label:"Energy", data:energy, borderColor:"#a78bfa", tension:0.3 },
+        { label:"Mood", data:mood, borderColor:"#6ee7b7", tension:0.3 }
       ]
-    },
-    options: {
-      responsive: true
     }
   });
 }
 
-// ─── INIT ─────────────────────────
+// ─── INIT ─────────────────────
 render();
 updateChart();
+
 </script>
 
 </body>
