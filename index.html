@@ -535,30 +535,49 @@ function renderScale(field, value) {
 }
 
 // ─── Input Handlers ───────────────────────────────────────────────────────────
-function handleInput(field, value) {
-  if (!DATA[activeDate]) DATA[activeDate] = emptyDay();
-  DATA[activeDate][field] = value;
-  markUnsaved();
+<script>
+
+function autoSave() {
+
+  saveData(DATA);
+
 }
 
-function highlightTime(el, matchVal) {
-  if (el.value === matchVal) el.classList.add('highlight');
-  else el.classList.remove('highlight');
+function handleInput(field, value) {
+
+  if (!DATA[activeDate]) DATA[activeDate] = emptyDay();
+
+  DATA[activeDate][field] = value;
+
+  autoSave();
+
 }
 
 function toggleField(field, type) {
+
   if (!DATA[activeDate]) DATA[activeDate] = emptyDay();
+
   DATA[activeDate][field] = !DATA[activeDate][field];
+
   renderToggle(field, DATA[activeDate][field], type);
-  markUnsaved();
+
+  autoSave();
+
 }
 
 function setScale(field, val) {
+
   if (!DATA[activeDate]) DATA[activeDate] = emptyDay();
+
   DATA[activeDate][field] = DATA[activeDate][field] === val ? null : val;
+
   renderScale(field, DATA[activeDate][field]);
-  markUnsaved();
+
+  autoSave();
+
 }
+
+</script>
 
 function markUnsaved() {
   const btn = document.getElementById('saveBtn');
