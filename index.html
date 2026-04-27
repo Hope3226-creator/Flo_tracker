@@ -2,209 +2,218 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Flo Tracker">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Flo Tracker</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-
-:root {
-  --bg: #0f0e17;
-  --surface: #1a1828;
-  --surface2: #221f33;
-  --purple: #a78bfa;
-  --purple-dim: rgba(167,139,250,0.15);
-  --green: #6ee7b7;
-  --red: #f87171;
-  --yellow: #fcd34d;
-  --text: #ede9f0;
-  --muted: #7c6f8e;
-  --border: rgba(167,139,250,0.15);
-}
-
 body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: -apple-system, 'SF Pro Text', Georgia, serif;
-  padding-bottom: 40px;
-}
-
-.header {
-  padding: 50px 20px 20px;
-  text-align: center;
+  font-family: -apple-system, sans-serif;
+  background: #0f0e17;
+  color: #eee;
+  padding: 20px;
 }
 
 .card {
-  background: var(--surface);
-  border-radius: 20px;
-  border: 1px solid var(--border);
-  padding: 16px;
-  margin: 12px;
+  background: #1a1828;
+  padding: 15px;
+  border-radius: 15px;
+  margin-bottom: 15px;
 }
 
 .section-label {
-  font-size: 10px;
-  letter-spacing: 3px;
-  color: var(--muted);
-  margin-bottom: 12px;
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: #7c6f8e;
+  margin-bottom: 10px;
 }
 
 .toggle-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 10px;
-  background: var(--surface2);
-  margin-bottom: 6px;
-  border-radius: 10px;
-  cursor: pointer;
+  display:flex;
+  justify-content:space-between;
+  padding:10px;
+  background:#221f33;
+  margin-bottom:6px;
+  border-radius:10px;
+  cursor:pointer;
 }
 
-.toggle-row.on-good { background: rgba(110,231,183,0.15); }
-.toggle-row.on-bad { background: rgba(248,113,113,0.15); }
-.toggle-row.on-neutral { background: rgba(252,211,77,0.15); }
+.toggle-row.on { background:#2c3d2f; }
 
-.toggle-switch {
-  width: 36px;
-  height: 18px;
-  border-radius: 10px;
-  background: #444;
-  display: flex;
-  align-items: center;
-  padding: 2px;
-}
-
-.toggle-knob {
-  width: 14px;
-  height: 14px;
-  background: white;
-  border-radius: 50%;
-}
-
-.scale-row { display: flex; gap: 6px; }
+.scale-row { display:flex; gap:5px; }
 
 .scale-btn {
-  flex: 1;
-  padding: 6px;
-  font-size: 11px;
-  background: var(--surface2);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 8px;
-  color: var(--muted);
+  flex:1;
+  padding:6px;
+  background:#221f33;
+  border:none;
+  color:#aaa;
+  border-radius:8px;
 }
 
-.scale-btn.active-1 { background: rgba(248,113,113,0.3); }
-.scale-btn.active-2 { background: rgba(251,146,60,0.3); }
-.scale-btn.active-3 { background: rgba(252,211,77,0.3); }
-.scale-btn.active-4 { background: rgba(110,231,183,0.3); }
-.scale-btn.active-5 { background: rgba(167,139,250,0.3); }
+.scale-btn.active {
+  background:#a78bfa;
+  color:black;
+}
 
 textarea {
-  width: 100%;
-  padding: 10px;
-  background: var(--surface2);
-  border-radius: 10px;
-  color: var(--text);
+  width:100%;
+  height:80px;
+  background:#221f33;
+  border:none;
+  color:white;
+  padding:10px;
+  border-radius:10px;
 }
 
-.save-btn {
-  width: 94%;
-  margin: 12px;
-  padding: 14px;
-  border-radius: 12px;
-  border: 1px solid var(--purple);
-  background: var(--purple-dim);
-  color: var(--purple);
+button {
+  width:100%;
+  padding:12px;
+  margin-top:10px;
+  border:none;
+  border-radius:10px;
+  background:#a78bfa;
 }
 
-canvas { margin-top: 10px; }
+canvas { margin-top:15px; }
 </style>
 </head>
 
 <body>
 
-<div class="header">
-  <h2>Flo Tracker 🌸</h2>
-</div>
-
 <div class="card">
-  <div class="section-label">Energy Trend</div>
-  <canvas id="energyChart"></canvas>
-</div>
+  <div class="section-label">Morning Loop</div>
+  <div class="toggle-row" onclick="toggleField('morningLoop')">
+    Morning loop stuck
+  </div>
 
-<div class="card">
+  <div class="section-label">Energy</div>
+  <div class="scale-row" id="energyRow"></div>
+
+  <div class="section-label">Mood</div>
+  <div class="scale-row" id="moodRow"></div>
+
   <div class="section-label">Notes</div>
-  <textarea id="f-notes" oninput="handleInput('notes', this.value)"></textarea>
+  <textarea oninput="handleInput('notes', this.value)"></textarea>
+
+  <button onclick="saveDay()">Save</button>
+  <button onclick="exportData()">Export</button>
 </div>
 
-<button class="save-btn" onclick="saveDay()">Save</button>
+<div class="card">
+  <div class="section-label">Trends</div>
+  <canvas id="chart"></canvas>
+</div>
 
 <script>
-// ─── DATA ─────────────────────
-const STORAGE_KEY = "flo-tracker-v1";
-
-const DATA = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-
+// ─── STATE ─────────────────────────
+const KEY = "flo-v2";
+let DATA = JSON.parse(localStorage.getItem(KEY) || "{}");
 let activeDate = new Date().toISOString().split("T")[0];
 
-function saveData() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(DATA));
+function save() {
+  localStorage.setItem(KEY, JSON.stringify(DATA));
 }
 
-// ─── INPUT HANDLERS ─────────────────────
-function handleInput(field, value) {
-  if (!DATA[activeDate]) DATA[activeDate] = {};
-  DATA[activeDate][field] = value;
-  saveData();
-}
-
-// ─── SCALE + TOGGLES ─────────────────────
-function setScale(field, val) {
+// ─── INPUT ─────────────────────────
+function handleInput(field, val) {
   if (!DATA[activeDate]) DATA[activeDate] = {};
   DATA[activeDate][field] = val;
-  saveData();
+  save();
+  updateChart();
 }
 
 function toggleField(field) {
   if (!DATA[activeDate]) DATA[activeDate] = {};
   DATA[activeDate][field] = !DATA[activeDate][field];
-  saveData();
+  render();
+  save();
 }
 
-// ─── CHART ─────────────────────
-const ctx = document.getElementById("energyChart");
+function setScale(field, val) {
+  if (!DATA[activeDate]) DATA[activeDate] = {};
+  DATA[activeDate][field] =
+    DATA[activeDate][field] === val ? null : val;
+  render();
+  save();
+}
 
-function buildChart() {
+// ─── RENDER SCALES ─────────────────────────
+function renderScales() {
+  const energy = document.getElementById("energyRow");
+  const mood = document.getElementById("moodRow");
+
+  energy.innerHTML = "";
+  mood.innerHTML = "";
+
+  for (let i = 1; i <= 5; i++) {
+    energy.innerHTML += `<button class="scale-btn ${DATA[activeDate]?.energy===i?'active':''}" onclick="setScale('energy',${i})">${i}</button>`;
+    mood.innerHTML += `<button class="scale-btn ${DATA[activeDate]?.mood===i?'active':''}" onclick="setScale('mood',${i})">${i}</button>`;
+  }
+}
+
+// ─── RENDER ─────────────────────────
+function render() {
+  renderScales();
+  updateChart();
+}
+
+// ─── SAVE DAY ─────────────────────────
+function saveDay() {
+  save();
+  updateChart();
+}
+
+// ─── EXPORT ─────────────────────────
+function exportData() {
+  const blob = new Blob([JSON.stringify(DATA,null,2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "flo-export.json";
+  a.click();
+}
+
+// ─── CHART ─────────────────────────
+let chart;
+
+function updateChart() {
   const labels = Object.keys(DATA).sort();
-  const values = labels.map(d => DATA[d]?.energy || 0);
+  const energy = labels.map(d => DATA[d]?.energy || null);
+  const mood = labels.map(d => DATA[d]?.mood || null);
 
-  new Chart(ctx, {
+  const ctx = document.getElementById("chart");
+
+  if (chart) chart.destroy();
+
+  chart = new Chart(ctx, {
     type: "line",
     data: {
       labels,
-      datasets: [{
-        label: "Energy",
-        data: values,
-        borderColor: "#a78bfa",
-        tension: 0.3
-      }]
+      datasets: [
+        {
+          label: "Energy",
+          data: energy,
+          borderColor: "#a78bfa",
+          tension: 0.3
+        },
+        {
+          label: "Mood",
+          data: mood,
+          borderColor: "#6ee7b7",
+          tension: 0.3
+        }
+      ]
+    },
+    options: {
+      responsive: true
     }
   });
 }
 
-// ─── SAVE ─────────────────────
-function saveDay() {
-  saveData();
-  buildChart();
-  alert("Saved!");
-}
-
-// ─── INIT ─────────────────────
-buildChart();
+// ─── INIT ─────────────────────────
+render();
+updateChart();
 </script>
 
 </body>
