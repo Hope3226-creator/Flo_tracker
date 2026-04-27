@@ -539,49 +539,9 @@ function renderScale(field, value) {
 }
 
 // ─── Input Handlers ───────────────────────────────────────────────────────────
-<script>
 
-function autoSave() {
 
-  saveData(DATA);
 
-}
-
-function handleInput(field, value) {
-
-  if (!DATA[activeDate]) DATA[activeDate] = emptyDay();
-
-  DATA[activeDate][field] = value;
-
-  autoSave();
-
-}
-
-function toggleField(field, type) {
-
-  if (!DATA[activeDate]) DATA[activeDate] = emptyDay();
-
-  DATA[activeDate][field] = !DATA[activeDate][field];
-
-  renderToggle(field, DATA[activeDate][field], type);
-
-  autoSave();
-
-}
-
-function setScale(field, val) {
-
-  if (!DATA[activeDate]) DATA[activeDate] = emptyDay();
-
-  DATA[activeDate][field] = DATA[activeDate][field] === val ? null : val;
-
-  renderScale(field, DATA[activeDate][field]);
-
-  autoSave();
-
-}
-
-</script>
 
 function markUnsaved() {
   const btn = document.getElementById('saveBtn');
