@@ -442,19 +442,7 @@ function getTodayStr() {
   return d.toISOString().split('T')[0];
 }
 
-function exportData() {
-  const dataStr = JSON.stringify(DATA, null, 2);
-  const blob = new Blob([dataStr], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
 
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "flo-tracker-data.json";
-  a.click();
-
-  URL.revokeObjectURL(url);
-}
-</script>
 // ─── Date Tabs ────────────────────────────────────────────────────────────────
 function buildDateTabs() {
   const wrap = document.getElementById('dateScroll');
