@@ -441,7 +441,7 @@ function getTodayStr() {
   const d = new Date();
   return d.toISOString().split('T')[0];
 }
-<script>
+
 function exportData() {
   const dataStr = JSON.stringify(DATA, null, 2);
   const blob = new Blob([dataStr], { type: "application/json" });
