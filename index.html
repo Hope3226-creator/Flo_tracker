@@ -91,122 +91,170 @@ canvas { margin-top:15px; }
 
 <script>
 
-// ─── STATE ─────────────────────
-const KEY = "flo-v3";
-let DATA = JSON.parse(localStorage.getItem(KEY) || "{}");
-let activeDate = new Date().toISOString().split("T")[0];
+// ─── State ───────────────────────────────────────────────────────────────────
+const STORAGE_KEY = 'flo-tracker-v1';
 
-document.getElementById("datePicker").value = activeDate;
-
-function save() {
-  localStorage.setItem(KEY, JSON.stringify(DATA));
+function generateDates() {
+  const dates = [];
+  const start = new Date('2026-04-20');
+  const end = new Date('2026-05-04');
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    dates.push(d.toISOString().split('T')[0]);
+  }
+  return dates;
 }
 
-// ─── HELPERS ─────────────────────
-function getDay() {
-  if (!DATA[activeDate]) DATA[activeDate] = {};
-  return DATA[activeDate];
+const ALL_DATES = generateDates();
+
+const SEED = {
+  '2026-04-22': { medTime:'05:00', kickTime:'07:00', wearOffTime:'13:00', readyTime:'', morningLoop:true, madebed:false, shower:false, ate:true, clonidine:true, energy:2, mood:2, notes:'Had to be with mom at 6.' },
+  '2026-04-23': { medTime:'07:00', kickTime:'09:00', wearOffTime:'15:00', readyTime:'', morningLoop:true, madebed:false, shower:false, ate:true, clonidine:true, energy:2, mood:2, notes:"At mom's." },
+  '2026-04-24': { medTime:'08:00', kickTime:'10:00', wearOffTime:'17:00', readyTime:'10:00', morningLoop:true, madebed:false, shower:true, ate:false, clonidine:true, energy:3, mood:2, notes:'Interview day.' }
+};
+
+function emptyDay() {
+  return {
+    medTime:'', kickTime:'', wearOffTime:'', readyTime:'',
+    morningLoop:false, madebed:false, shower:false, ate:false, clonidine:false,
+    energy:null, mood:null, notes:''
+  };
 }
 
-// ─── INPUTS ─────────────────────
-function handleInput(field, val) {
-  getDay()[field] = val;
-  save();
-  updateChart();
+function loadData() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  const saved = raw ? JSON.parse(raw) : {};
+  const data = {};
+  for (const d of ALL_DATES) {
+    data[d] = saved[d] || SEED[d] || emptyDay();
+  }
+  return data;
 }
 
-function toggleField(field) {
-  const d = getDay();
-  d[field] = !d[field];
-  render();
-  save();
+function saveData() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(DATA));
+}
+
+let DATA = loadData();
+let activeDate = new Date().toISOString().split('T')[0];
+
+// ─── INPUT HANDLERS (FIXED) ───────────────────────────────────────────────────
+
+function handleInput(field, value) {
+  if (!DATA[activeDate]) DATA[activeDate] = emptyDay();
+  DATA[activeDate][field] = value;
+  saveData();
+  buildDateTabs();
+}
+
+function toggleField(field, type) {
+  if (!DATA[activeDate]) DATA[activeDate] = emptyDay();
+  DATA[activeDate][field] = !DATA[activeDate][field];
+  renderDay();
+  saveData();
 }
 
 function setScale(field, val) {
-  const d = getDay();
-  d[field] = d[field] === val ? null : val;
-  render();
-  save();
+  if (!DATA[activeDate]) DATA[activeDate] = emptyDay();
+  DATA[activeDate][field] = DATA[activeDate][field] === val ? null : val;
+  renderDay();
+  saveData();
 }
 
-// ─── DATE CHANGE ─────────────────────
-function changeDate(val) {
-  activeDate = val;
-  render();
+// ─── UI FIXES ────────────────────────────────────────────────────────────────
+
+function renderDay() {
+  const day = DATA[activeDate] || emptyDay();
+
+  document.getElementById('f-medTime').value = day.medTime;
+  document.getElementById('f-kickTime').value = day.kickTime;
+  document.getElementById('f-wearOffTime').value = day.wearOffTime;
+  document.getElementById('f-readyTime').value = day.readyTime;
+  document.getElementById('f-notes').value = day.notes;
+
+  renderToggle('morningLoop', day.morningLoop, 'bad');
+  renderToggle('madebed', day.madebed, 'good');
+  renderToggle('shower', day.shower, 'good');
+  renderToggle('ate', day.ate, 'good');
+  renderToggle('clonidine', day.clonidine, 'neutral');
+
+  renderScale('energy', day.energy);
+  renderScale('mood', day.mood);
+
+  renderPatterns();
 }
 
-// ─── RENDER UI ─────────────────────
-function render() {
-  renderScales();
-  updateChart();
-  updateToggleUI();
+function renderToggle(field, value, type) {
+  const el = document.getElementById('t-' + field);
+  el.className = 'toggle-row' + (value ? ` on-${type}` : '');
 }
 
-function renderScales() {
-  const e = document.getElementById("energyRow");
-  const m = document.getElementById("moodRow");
-
-  e.innerHTML = "";
-  m.innerHTML = "";
-
-  const d = getDay();
-
-  for (let i = 1; i <= 5; i++) {
-    e.innerHTML += `<button class="scale-btn ${d.energy===i?'active':''}" onclick="setScale('energy',${i})">${i}</button>`;
-    m.innerHTML += `<button class="scale-btn ${d.mood===i?'active':''}" onclick="setScale('mood',${i})">${i}</button>`;
-  }
-}
-
-function updateToggleUI() {
-  const el = document.querySelector(".toggle-row");
-  const d = getDay();
-  if (d.morningLoop) el.classList.add("on");
-  else el.classList.remove("on");
-}
-
-// ─── SAVE ─────────────────────
-function saveDay() {
-  save();
-  updateChart();
-}
-
-// ─── EXPORT ─────────────────────
-function exportData() {
-  const blob = new Blob([JSON.stringify(DATA,null,2)], {type:"application/json"});
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "flo-export.json";
-  a.click();
-}
-
-// ─── CHART ─────────────────────
-let chart;
-
-function updateChart() {
-  const labels = Object.keys(DATA).sort();
-  const energy = labels.map(d => DATA[d]?.energy || null);
-  const mood = labels.map(d => DATA[d]?.mood || null);
-
-  const ctx = document.getElementById("chart");
-
-  if (chart) chart.destroy();
-
-  chart = new Chart(ctx, {
-    type: "line",
-    data: {
-      labels,
-      datasets: [
-        { label:"Energy", data:energy, borderColor:"#a78bfa", tension:0.3 },
-        { label:"Mood", data:mood, borderColor:"#6ee7b7", tension:0.3 }
-      ]
-    }
+function renderScale(field, value) {
+  const container = document.getElementById('scale-' + field);
+  if (!container) return;
+  container.querySelectorAll('.scale-btn').forEach((btn, i) => {
+    btn.className = 'scale-btn' + (value === i+1 ? ` active-${i+1}` : '');
   });
 }
 
-// ─── INIT ─────────────────────
-render();
-updateChart();
+// ─── SAVE + EXPORT (FIXED) ───────────────────────────────────────────────────
 
+function saveDay() {
+  saveData();
+  alert("Saved ✔");
+}
+
+function exportData() {
+  const blob = new Blob([JSON.stringify(DATA, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "flo-data.json";
+  a.click();
+}
+
+// ─── DATE TABS ───────────────────────────────────────────────────────────────
+
+function buildDateTabs() {
+  const wrap = document.getElementById('dateScroll');
+  wrap.innerHTML = '';
+
+  for (const d of ALL_DATES) {
+    const btn = document.createElement('button');
+    btn.className = 'date-btn' + (d === activeDate ? ' active' : '');
+    btn.textContent = d.split('-')[2];
+    btn.onclick = () => {
+      activeDate = d;
+      renderDay();
+      buildDateTabs();
+    };
+    wrap.appendChild(btn);
+  }
+}
+
+// ─── PATTERNS ────────────────────────────────────────────────────────────────
+
+function renderPatterns() {
+  const wrap = document.getElementById('patternRows');
+  wrap.innerHTML = '';
+
+  const keys = [
+    { label:'Morning loop', key:'morningLoop' },
+    { label:'Made bed', key:'madebed' },
+    { label:'Ate breakfast', key:'ate' }
+  ];
+
+  for (const k of keys) {
+    const row = document.createElement('div');
+    row.className = 'pattern-row';
+    row.innerHTML = `<div class="pattern-label">${k.label}</div>`;
+    wrap.appendChild(row);
+  }
+}
+
+// ─── INIT ───────────────────────────────────────────────────────────────────
+
+buildDateTabs();
+renderDay();
 </script>
 
 </body>
