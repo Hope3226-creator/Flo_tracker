@@ -2,95 +2,391 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Flo Tracker">
 <title>Flo Tracker</title>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <style>
-body { font-family: -apple-system; background:#0f0e17; color:white; padding:15px; }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  
+  :root {
+    --bg: #0f0e17;
+    --surface: #1a1828;
+    --surface2: #221f33;
+    --purple: #a78bfa;
+    --purple-dim: rgba(167,139,250,0.15);
+    --green: #6ee7b7;
+    --red: #f87171;
+    --yellow: #fcd34d;
+    --text: #ede9f0;
+    --muted: #7c6f8e;
+    --border: rgba(167,139,250,0.15);
+  }
 
-.card { background:#1a1828; padding:15px; border-radius:15px; margin-bottom:15px; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, 'SF Pro Text', Georgia, serif;
+    min-height: 100vh;
+    padding-bottom: 40px;
+  }
 
-.section-label { font-size:11px; color:#7c6f8e; margin-bottom:10px; }
+  .header {
+    background: linear-gradient(180deg, #16132a 0%, var(--bg) 100%);
+    padding: 52px 20px 20px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
 
-input, textarea {
-  width:100%;
-  margin-bottom:8px;
-  padding:8px;
-  border-radius:8px;
-  border:none;
-  background:#221f33;
-  color:white;
-}
+  .header-eyebrow {
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: var(--purple);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
 
-.toggle-row {
-  padding:10px;
-  background:#221f33;
-  margin-bottom:6px;
-  border-radius:10px;
-  cursor:pointer;
-}
+  .header-title {
+    font-size: 28px;
+    font-weight: 300;
+    color: #f5f0ff;
+    margin-bottom: 4px;
+  }
 
-.toggle-row.on { background:#2c3d2f; }
+  .header-sub {
+    font-size: 12px;
+    color: var(--muted);
+  }
 
-.scale-row { display:flex; gap:5px; margin-bottom:10px; }
+  /* Date scroll */
+  .date-scroll-wrap {
+    overflow-x: auto;
+    padding: 16px 16px 8px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .date-scroll-wrap::-webkit-scrollbar { display: none; }
 
-.scale-btn {
-  flex:1;
-  padding:6px;
-  border-radius:8px;
-  background:#221f33;
-  border:none;
-  color:#aaa;
-}
+  .date-scroll {
+    display: flex;
+    gap: 8px;
+    width: max-content;
+  }
 
-.scale-btn.active { background:#a78bfa; color:black; }
+  .date-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 12px;
+    border-radius: 14px;
+    border: 2px solid transparent;
+    background: var(--surface);
+    color: var(--muted);
+    font-size: 11px;
+    cursor: pointer;
+    min-width: 52px;
+    transition: all 0.2s;
+    -webkit-appearance: none;
+    font-family: inherit;
+  }
 
-button {
-  width:100%;
-  padding:10px;
-  border-radius:10px;
-  border:none;
-  margin-top:10px;
-  background:#a78bfa;
-}
+  .date-btn .day-name { font-size: 10px; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 1px; }
+  .date-btn .day-num { font-size: 18px; font-weight: 500; margin-bottom: 2px; }
+  .date-btn .dot { width: 5px; height: 5px; border-radius: 50%; background: transparent; }
 
-canvas { margin-top:15px; }
+  .date-btn.has-data .dot { background: var(--muted); }
+  .date-btn.active { border-color: var(--purple); background: var(--purple-dim); color: var(--purple); }
+  .date-btn.active .dot { background: var(--purple); }
+  .date-btn.is-today { color: var(--green); }
+  .date-btn.is-today .dot { background: var(--green); }
+  .date-btn.active.is-today { border-color: var(--green); background: rgba(110,231,183,0.1); color: var(--green); }
+
+  /* Main content */
+  .content { padding: 0 16px; }
+
+  .card {
+    background: var(--surface);
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    padding: 20px 16px;
+    margin-bottom: 14px;
+  }
+
+  .section-label {
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+
+  /* Timing grid */
+  .time-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+  .time-field label { display: block; font-size: 10px; color: var(--muted); margin-bottom: 5px; }
+  .time-field input[type="time"] {
+    width: 100%;
+    padding: 9px 8px;
+    background: var(--surface2);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    -webkit-appearance: none;
+  }
+  .time-field input[type="time"].highlight {
+    border-color: var(--purple);
+    background: var(--purple-dim);
+    color: var(--purple);
+  }
+  .time-field.wide { grid-column: span 3; }
+
+  /* Toggles */
+  .toggle-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 11px 12px;
+    margin-bottom: 6px;
+    background: var(--surface2);
+    border-radius: 12px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+    user-select: none;
+  }
+  .toggle-row.on-good { background: rgba(110,231,183,0.08); border-color: rgba(110,231,183,0.3); }
+  .toggle-row.on-bad { background: rgba(248,113,113,0.08); border-color: rgba(248,113,113,0.3); }
+  .toggle-row.on-neutral { background: rgba(252,211,77,0.08); border-color: rgba(252,211,77,0.3); }
+
+  .toggle-label { font-size: 14px; color: var(--muted); }
+  .toggle-row.on-good .toggle-label,
+  .toggle-row.on-bad .toggle-label,
+  .toggle-row.on-neutral .toggle-label { color: var(--text); }
+
+  .toggle-switch {
+    width: 36px; height: 20px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.1);
+    display: flex; align-items: center;
+    padding: 0 3px;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .toggle-row.on-good .toggle-switch { background: var(--green); justify-content: flex-end; }
+  .toggle-row.on-bad .toggle-switch { background: var(--red); justify-content: flex-end; }
+  .toggle-row.on-neutral .toggle-switch { background: var(--yellow); justify-content: flex-end; }
+  .toggle-knob { width: 14px; height: 14px; border-radius: 50%; background: white; }
+
+  /* Scale */
+  .scale-row { display: flex; gap: 6px; }
+  .scale-btn {
+    flex: 1;
+    padding: 8px 2px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.07);
+    background: var(--surface2);
+    color: var(--muted);
+    font-size: 11px;
+    cursor: pointer;
+    font-family: inherit;
+    text-align: center;
+    transition: all 0.2s;
+    -webkit-appearance: none;
+    line-height: 1.4;
+  }
+  .scale-btn.active-1 { background: rgba(248,113,113,0.2); border-color: #f87171; color: #f87171; }
+  .scale-btn.active-2 { background: rgba(251,146,60,0.2); border-color: #fb923c; color: #fb923c; }
+  .scale-btn.active-3 { background: rgba(252,211,77,0.2); border-color: #fcd34d; color: #fcd34d; }
+  .scale-btn.active-4 { background: rgba(110,231,183,0.2); border-color: #6ee7b7; color: #6ee7b7; }
+  .scale-btn.active-5 { background: rgba(167,139,250,0.2); border-color: #a78bfa; color: #a78bfa; }
+
+  /* Notes */
+  textarea {
+    width: 100%;
+    min-height: 90px;
+    background: var(--surface2);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 12px;
+    padding: 12px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+    resize: vertical;
+    outline: none;
+    line-height: 1.6;
+  }
+  textarea:focus { border-color: var(--purple); }
+  textarea::placeholder { color: var(--muted); }
+
+  /* Save button */
+  .save-btn {
+    width: 100%;
+    padding: 14px;
+    border-radius: 14px;
+    border: 1px solid var(--purple);
+    background: var(--purple-dim);
+    color: var(--purple);
+    font-size: 14px;
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: 1px;
+    transition: all 0.3s;
+    -webkit-appearance: none;
+    margin-bottom: 14px;
+  }
+  .save-btn.saved { border-color: var(--green); background: rgba(110,231,183,0.1); color: var(--green); }
+
+  /* Pattern summary */
+  .pattern-card {
+    background: var(--surface);
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    padding: 20px 16px;
+    margin-bottom: 14px;
+  }
+
+  .pattern-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    gap: 10px;
+  }
+  .pattern-label { font-size: 12px; color: var(--muted); flex: 1; }
+  .pattern-dots { display: flex; gap: 3px; }
+  .pdot {
+    width: 18px; height: 18px;
+    border-radius: 5px;
+    border: 1px solid rgba(255,255,255,0.06);
+    background: var(--surface2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 8px;
+  }
+  .pdot.yes-good { background: rgba(110,231,183,0.2); border-color: var(--green); color: var(--green); }
+  .pdot.yes-bad { background: rgba(248,113,113,0.2); border-color: var(--red); color: var(--red); }
+
+  .insight-box {
+    background: var(--purple-dim);
+    border: 1px solid rgba(167,139,250,0.3);
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 13px;
+    color: #c4b8d4;
+    line-height: 1.6;
+    margin-top: 14px;
+  }
+  .insight-box strong { color: var(--purple); }
+
+  .scale-label { font-size: 10px; display: block; }
 </style>
 </head>
-
 <body>
 
-<div class="card">
-  <div class="section-label">Date</div>
-  <input id="datePicker" type="date" onchange="changeDate(this.value)">
-
-  <div class="section-label">Morning Loop</div>
-  <div class="toggle-row" onclick="toggleField('morningLoop')">
-    Morning loop
-  </div>
-
-  <div class="section-label">Energy</div>
-  <div class="scale-row" id="energyRow"></div>
-
-  <div class="section-label">Mood</div>
-  <div class="scale-row" id="moodRow"></div>
-
-  <div class="section-label">Notes</div>
-  <textarea oninput="handleInput('notes', this.value)"></textarea>
-
-  <button onclick="saveDay()">Save</button>
-  <button onclick="exportData()">Export</button>
+<div class="header">
+  <div class="header-eyebrow">Daily Wellness Log</div>
+  <div class="header-title">Flo's Patterns 🌸</div>
+  <div class="header-sub">Apr 20 – May 4 · Psychiatrist: Mon Apr 28</div>
 </div>
 
-<div class="card">
-  <div class="section-label">Trends</div>
-  <canvas id="chart"></canvas>
+<div class="date-scroll-wrap" id="dateScrollWrap">
+  <div class="date-scroll" id="dateScroll"></div>
+</div>
+
+<div class="content">
+  <!-- Timing -->
+  <div class="card">
+    <div class="section-label">⏱ Medication Timing</div>
+    <div class="time-grid">
+      <div class="time-field">
+        <label>Took meds</label>
+        <input type="time" id="f-medTime" oninput="handleInput('medTime', this.value); highlightTime(this, '08:00')">
+      </div>
+      <div class="time-field">
+        <label>Kicked in</label>
+        <input type="time" id="f-kickTime" oninput="handleInput('kickTime', this.value)">
+      </div>
+      <div class="time-field">
+        <label>Wore off</label>
+        <input type="time" id="f-wearOffTime" oninput="handleInput('wearOffTime', this.value); highlightTime(this, '17:00')">
+      </div>
+      <div class="time-field wide">
+        <label>Ready & moving by</label>
+        <input type="time" id="f-readyTime" oninput="handleInput('readyTime', this.value)">
+      </div>
+    </div>
+  </div>
+
+  <!-- Morning Loop -->
+  <div class="card">
+    <div class="section-label">🌀 Morning Loop</div>
+    <div class="toggle-row" id="t-morningLoop" onclick="toggleField('morningLoop', 'bad')">
+      <span class="toggle-label">Air in stomach / stuck loop</span>
+      <div class="toggle-switch"><div class="toggle-knob"></div></div>
+    </div>
+    <div class="toggle-row" id="t-madebed" onclick="toggleField('madebed', 'good')">
+      <span class="toggle-label">Made bed</span>
+      <div class="toggle-switch"><div class="toggle-knob"></div></div>
+    </div>
+    <div class="toggle-row" id="t-shower" onclick="toggleField('shower', 'good')">
+      <span class="toggle-label">Showered</span>
+      <div class="toggle-switch"><div class="toggle-knob"></div></div>
+    </div>
+    <div class="toggle-row" id="t-ate" onclick="toggleField('ate', 'good')">
+      <span class="toggle-label">Ate breakfast</span>
+      <div class="toggle-switch"><div class="toggle-knob"></div></div>
+    </div>
+    <div class="toggle-row" id="t-clonidine" onclick="toggleField('clonidine', 'neutral')">
+      <span class="toggle-label">Took clonidine (pm)</span>
+      <div class="toggle-switch"><div class="toggle-knob"></div></div>
+    </div>
+  </div>
+
+  <!-- Energy & Mood -->
+  <div class="card">
+    <div class="section-label">✨ Energy & Mood</div>
+    <div style="margin-bottom:14px">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px">Energy level</div>
+      <div class="scale-row" id="scale-energy">
+        <button class="scale-btn" onclick="setScale('energy',1)">1<span class="scale-label">Low</span></button>
+        <button class="scale-btn" onclick="setScale('energy',2)">2<span class="scale-label">Meh</span></button>
+        <button class="scale-btn" onclick="setScale('energy',3)">3<span class="scale-label">Okay</span></button>
+        <button class="scale-btn" onclick="setScale('energy',4)">4<span class="scale-label">Good</span></button>
+        <button class="scale-btn" onclick="setScale('energy',5)">5<span class="scale-label">Great</span></button>
+      </div>
+    </div>
+    <div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px">Mood</div>
+      <div class="scale-row" id="scale-mood">
+        <button class="scale-btn" onclick="setScale('mood',1)">1<span class="scale-label">Rough</span></button>
+        <button class="scale-btn" onclick="setScale('mood',2)">2<span class="scale-label">Low</span></button>
+        <button class="scale-btn" onclick="setScale('mood',3)">3<span class="scale-label">Okay</span></button>
+        <button class="scale-btn" onclick="setScale('mood',4)">4<span class="scale-label">Good</span></button>
+        <button class="scale-btn" onclick="setScale('mood',5)">5<span class="scale-label">Great</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notes -->
+  <div class="card">
+    <div class="section-label">📝 Notes</div>
+    <textarea id="f-notes" placeholder="What happened today? Patterns, feelings, observations..." oninput="handleInput('notes', this.value)"></textarea>
+  </div>
+
+  <button class="save-btn" id="saveBtn" onclick="saveDay()">Save Entry</button>
+
+  <!-- Pattern Summary -->
+  <div class="pattern-card">
+    <div class="section-label">📊 Pattern Summary</div>
+    <div id="patternRows"></div>
+    <div class="insight-box">
+      💡 <strong>Key for psychiatrist:</strong> 8am XR = consistent 7hr window, no clonidine at wear-off. Morning pre-activation window (7–10am) is the pain point — possible IR candidate.
+    </div>
+  </div>
 </div>
 
 <script>
-
 // ─── State ───────────────────────────────────────────────────────────────────
 const STORAGE_KEY = 'flo-tracker-v1';
 
@@ -107,155 +403,225 @@ function generateDates() {
 const ALL_DATES = generateDates();
 
 const SEED = {
-  '2026-04-22': { medTime:'05:00', kickTime:'07:00', wearOffTime:'13:00', readyTime:'', morningLoop:true, madebed:false, shower:false, ate:true, clonidine:true, energy:2, mood:2, notes:'Had to be with mom at 6.' },
-  '2026-04-23': { medTime:'07:00', kickTime:'09:00', wearOffTime:'15:00', readyTime:'', morningLoop:true, madebed:false, shower:false, ate:true, clonidine:true, energy:2, mood:2, notes:"At mom's." },
-  '2026-04-24': { medTime:'08:00', kickTime:'10:00', wearOffTime:'17:00', readyTime:'10:00', morningLoop:true, madebed:false, shower:true, ate:false, clonidine:true, energy:3, mood:2, notes:'Interview day.' }
+  '2026-04-22': { medTime:'05:00', kickTime:'07:00', wearOffTime:'13:00', readyTime:'', morningLoop:true, madebed:false, shower:false, ate:true, clonidine:true, energy:2, mood:2, notes:'Had to be with mom at 6. Anxious all day.' },
+  '2026-04-23': { medTime:'07:00', kickTime:'09:00', wearOffTime:'15:00', readyTime:'', morningLoop:true, madebed:false, shower:false, ate:true, clonidine:true, energy:2, mood:2, notes:"At mom's. Cooked and ate. Came home. Wore off at 3, anxious all day." },
+  '2026-04-24': { medTime:'08:00', kickTime:'10:00', wearOffTime:'17:00', readyTime:'10:00', morningLoop:true, madebed:false, shower:true, ate:false, clonidine:true, energy:3, mood:2, notes:'Interview day. Almost late. Grieving not activating in the morning.' },
+  '2026-04-25': { medTime:'08:00', kickTime:'10:00', wearOffTime:'17:00', readyTime:'10:00', morningLoop:true, madebed:false, shower:false, ate:false, clonidine:false, energy:3, mood:3, notes:'No clonidine needed at wear-off. Starting to notice morning limbo pattern.' },
+  '2026-04-26': { medTime:'08:00', kickTime:'10:00', wearOffTime:'17:00', readyTime:'10:00', morningLoop:true, madebed:false, shower:false, ate:false, clonidine:false, energy:2, mood:2, notes:"Flaccid morning. Frustrated. Usual ride unavailable — overwhelmed by transport. Didn't make it to church." },
+  '2026-04-27': { medTime:'09:00', kickTime:'11:00', wearOffTime:'19:00', readyTime:'11:00', morningLoop:true, madebed:false, shower:false, ate:false, clonidine:false, energy:2, mood:2, notes:"Anxious about meds not working. Took at 9 instead of 8. Didn't do laundry. Didn't make bed." },
 };
 
 function emptyDay() {
-  return {
-    medTime:'', kickTime:'', wearOffTime:'', readyTime:'',
-    morningLoop:false, madebed:false, shower:false, ate:false, clonidine:false,
-    energy:null, mood:null, notes:''
-  };
+  return { medTime:'', kickTime:'', wearOffTime:'', readyTime:'', morningLoop:false, madebed:false, shower:false, ate:false, clonidine:false, energy:null, mood:null, notes:'' };
 }
 
 function loadData() {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  const saved = raw ? JSON.parse(raw) : {};
-  const data = {};
-  for (const d of ALL_DATES) {
-    data[d] = saved[d] || SEED[d] || emptyDay();
-  }
-  return data;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const saved = raw ? JSON.parse(raw) : {};
+    const data = {};
+    for (const d of ALL_DATES) {
+      data[d] = saved[d] || SEED[d] || emptyDay();
+    }
+    return data;
+  } catch(e) { return {}; }
 }
 
-function saveData() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(DATA));
+function saveData(data) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
 
 let DATA = loadData();
-let activeDate = new Date().toISOString().split('T')[0];
+let activeDate = getTodayStr();
 
-// ─── INPUT HANDLERS (FIXED) ───────────────────────────────────────────────────
+function getTodayStr() {
+  const d = new Date();
+  return d.toISOString().split('T')[0];
+}
 
-function handleInput(field, value) {
-  if (!DATA[activeDate]) DATA[activeDate] = emptyDay();
-  DATA[activeDate][field] = value;
-  saveData();
+// ─── Date Tabs ────────────────────────────────────────────────────────────────
+function buildDateTabs() {
+  const wrap = document.getElementById('dateScroll');
+  const today = getTodayStr();
+  const dayNames = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+  const monthNames = ['Jan','Feb','Mar','Apr','May'];
+
+  wrap.innerHTML = '';
+  for (const dateStr of ALL_DATES) {
+    const d = new Date(dateStr + 'T12:00:00');
+    const isToday = dateStr === today;
+    const isActive = dateStr === activeDate;
+    const hasData = DATA[dateStr] && (DATA[dateStr].medTime || DATA[dateStr].notes);
+
+    const btn = document.createElement('button');
+    btn.className = 'date-btn' +
+      (isActive ? ' active' : '') +
+      (isToday ? ' is-today' : '') +
+      (hasData ? ' has-data' : '');
+    btn.innerHTML = `
+      <span class="day-name">${dayNames[d.getDay()]}</span>
+      <span class="day-num">${d.getDate()}</span>
+      <span class="dot"></span>
+    `;
+    btn.onclick = () => switchDay(dateStr);
+    btn.setAttribute('data-date', dateStr);
+    wrap.appendChild(btn);
+  }
+
+  // Scroll active into view
+  setTimeout(() => {
+    const activeBtn = wrap.querySelector('.active');
+    if (activeBtn) activeBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  }, 100);
+}
+
+function switchDay(dateStr) {
+  activeDate = dateStr;
   buildDateTabs();
-}
-
-function toggleField(field, type) {
-  if (!DATA[activeDate]) DATA[activeDate] = emptyDay();
-  DATA[activeDate][field] = !DATA[activeDate][field];
   renderDay();
-  saveData();
 }
 
-function setScale(field, val) {
-  if (!DATA[activeDate]) DATA[activeDate] = emptyDay();
-  DATA[activeDate][field] = DATA[activeDate][field] === val ? null : val;
-  renderDay();
-  saveData();
-}
-
-// ─── UI FIXES ────────────────────────────────────────────────────────────────
-
+// ─── Render Day ───────────────────────────────────────────────────────────────
 function renderDay() {
   const day = DATA[activeDate] || emptyDay();
 
-  document.getElementById('f-medTime').value = day.medTime;
-  document.getElementById('f-kickTime').value = day.kickTime;
-  document.getElementById('f-wearOffTime').value = day.wearOffTime;
-  document.getElementById('f-readyTime').value = day.readyTime;
-  document.getElementById('f-notes').value = day.notes;
+  // Times
+  setTimeInput('f-medTime', day.medTime, '08:00');
+  setTimeInput('f-kickTime', day.kickTime, null);
+  setTimeInput('f-wearOffTime', day.wearOffTime, '17:00');
+  setTimeInput('f-readyTime', day.readyTime, null);
 
+  // Toggles
   renderToggle('morningLoop', day.morningLoop, 'bad');
   renderToggle('madebed', day.madebed, 'good');
   renderToggle('shower', day.shower, 'good');
   renderToggle('ate', day.ate, 'good');
   renderToggle('clonidine', day.clonidine, 'neutral');
 
+  // Scales
   renderScale('energy', day.energy);
   renderScale('mood', day.mood);
+
+  // Notes
+  document.getElementById('f-notes').value = day.notes || '';
+
+  // Save btn
+  document.getElementById('saveBtn').className = 'save-btn';
+  document.getElementById('saveBtn').textContent = 'Save Entry';
 
   renderPatterns();
 }
 
+function setTimeInput(id, value, highlightVal) {
+  const el = document.getElementById(id);
+  el.value = value || '';
+  if (highlightVal && value === highlightVal) {
+    el.classList.add('highlight');
+  } else {
+    el.classList.remove('highlight');
+  }
+}
+
 function renderToggle(field, value, type) {
-  const el = document.getElementById('t-' + field);
-  el.className = 'toggle-row' + (value ? ` on-${type}` : '');
+  const row = document.getElementById('t-' + field);
+  row.className = 'toggle-row' + (value ? ` on-${type}` : '');
 }
 
 function renderScale(field, value) {
   const container = document.getElementById('scale-' + field);
-  if (!container) return;
   container.querySelectorAll('.scale-btn').forEach((btn, i) => {
     btn.className = 'scale-btn' + (value === i+1 ? ` active-${i+1}` : '');
   });
 }
 
-// ─── SAVE + EXPORT (FIXED) ───────────────────────────────────────────────────
+// ─── Input Handlers ───────────────────────────────────────────────────────────
+function handleInput(field, value) {
+  if (!DATA[activeDate]) DATA[activeDate] = emptyDay();
+  DATA[activeDate][field] = value;
+  markUnsaved();
+}
+
+function highlightTime(el, matchVal) {
+  if (el.value === matchVal) el.classList.add('highlight');
+  else el.classList.remove('highlight');
+}
+
+function toggleField(field, type) {
+  if (!DATA[activeDate]) DATA[activeDate] = emptyDay();
+  DATA[activeDate][field] = !DATA[activeDate][field];
+  renderToggle(field, DATA[activeDate][field], type);
+  markUnsaved();
+}
+
+function setScale(field, val) {
+  if (!DATA[activeDate]) DATA[activeDate] = emptyDay();
+  DATA[activeDate][field] = DATA[activeDate][field] === val ? null : val;
+  renderScale(field, DATA[activeDate][field]);
+  markUnsaved();
+}
+
+function markUnsaved() {
+  const btn = document.getElementById('saveBtn');
+  btn.className = 'save-btn';
+  btn.textContent = 'Save Entry';
+}
 
 function saveDay() {
-  saveData();
-  alert("Saved ✔");
+  saveData(DATA);
+  buildDateTabs();
+  const btn = document.getElementById('saveBtn');
+  btn.className = 'save-btn saved';
+  btn.textContent = '✓ Saved!';
+  renderPatterns();
 }
 
-function exportData() {
-  const blob = new Blob([JSON.stringify(DATA, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "flo-data.json";
-  a.click();
-}
+// ─── Pattern Summary ──────────────────────────────────────────────────────────
+const PATTERNS = [
+  { label: '8am dose', check: d => d.medTime === '08:00', good: true },
+  { label: 'Wore off 5pm', check: d => d.wearOffTime === '17:00', good: true },
+  { label: 'Clonidine needed', check: d => d.clonidine, good: false },
+  { label: 'Morning loop', check: d => d.morningLoop, good: false },
+  { label: 'Made bed', check: d => d.madebed, good: true },
+  { label: 'Ate breakfast', check: d => d.ate, good: true },
+];
 
-// ─── DATE TABS ───────────────────────────────────────────────────────────────
-
-function buildDateTabs() {
-  const wrap = document.getElementById('dateScroll');
-  wrap.innerHTML = '';
-
-  for (const d of ALL_DATES) {
-    const btn = document.createElement('button');
-    btn.className = 'date-btn' + (d === activeDate ? ' active' : '');
-    btn.textContent = d.split('-')[2];
-    btn.onclick = () => {
-      activeDate = d;
-      renderDay();
-      buildDateTabs();
-    };
-    wrap.appendChild(btn);
-  }
-}
-
-// ─── PATTERNS ────────────────────────────────────────────────────────────────
+// Show only Apr 22–May 4 in pattern (skip Apr 20-21 if empty)
+const PATTERN_DATES = ALL_DATES.filter(d => d >= '2026-04-22');
 
 function renderPatterns() {
   const wrap = document.getElementById('patternRows');
   wrap.innerHTML = '';
-
-  const keys = [
-    { label:'Morning loop', key:'morningLoop' },
-    { label:'Made bed', key:'madebed' },
-    { label:'Ate breakfast', key:'ate' }
-  ];
-
-  for (const k of keys) {
+  for (const p of PATTERNS) {
     const row = document.createElement('div');
     row.className = 'pattern-row';
-    row.innerHTML = `<div class="pattern-label">${k.label}</div>`;
+    const label = document.createElement('div');
+    label.className = 'pattern-label';
+    label.textContent = p.label;
+    const dots = document.createElement('div');
+    dots.className = 'pattern-dots';
+    for (const d of PATTERN_DATES) {
+      const day = DATA[d];
+      const dot = document.createElement('div');
+      const hasEntry = day && (day.medTime || day.notes || day.madebed || day.morningLoop);
+      if (!hasEntry) {
+        dot.className = 'pdot';
+      } else {
+        const val = p.check(day);
+        const positive = p.good ? val : !val;
+        dot.className = `pdot ${positive ? 'yes-good' : 'yes-bad'}`;
+        dot.textContent = positive ? '✓' : '✗';
+      }
+      dots.appendChild(dot);
+    }
+    row.appendChild(label);
+    row.appendChild(dots);
     wrap.appendChild(row);
   }
 }
 
-// ─── INIT ───────────────────────────────────────────────────────────────────
-
+// ─── Init ─────────────────────────────────────────────────────────────────────
 buildDateTabs();
 renderDay();
 </script>
-
 </body>
 </html>
